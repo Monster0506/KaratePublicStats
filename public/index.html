@@ -12,6 +12,7 @@
         font-family: system-ui, sans-serif;
         color: #f0f0f0;
         display: flex;
+        flex-direction: column; /* Added to stack card and QR code */
         justify-content: center;
         align-items: center;
         min-height: 100vh;
@@ -24,6 +25,7 @@
         width: 320px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         text-align: center;
+        margin-bottom: 20px; /* Added space between card and QR code */
       }
 
       .title {
@@ -63,7 +65,15 @@
       .badge:hover {
         background: #555;
       }
+
+      .qrcode-container {
+        background: #fff; /* QR codes are typically on a light background */
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   </head>
   <body>
     <div class="card">
@@ -73,6 +83,10 @@
       <div class="stat" id="techniques">0</div>
       <div class="label">Techniques Practiced</div>
       <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="qrcode-container">
+      <div id="qrcode"></div>
     </div>
 
     <script>
@@ -111,6 +125,13 @@
         badge.title = label;
         badgeContainer.appendChild(badge);
       }
+
+      // Generate QR code
+      const qrCode = new QRCode(document.getElementById("qrcode"), {
+        text: window.location.href,
+        width: 128,
+        height: 128,
+      });
     </script>
   </body>
 </html>
