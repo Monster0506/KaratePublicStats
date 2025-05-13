@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Karate Progress</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #121212;
+        font-family: system-ui, sans-serif;
+        color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #1e1e1e;
+        border-radius: 12px;
+        padding: 24px;
+        width: 320px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        text-align: center;
+      }
+
+      .title {
+        font-size: 1.4em;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+
+      .stat {
+        font-size: 2.2em;
+        font-weight: 700;
+      }
+
+      .label {
+        font-size: 0.9em;
+        margin-bottom: 16px;
+        opacity: 0.7;
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin-top: 12px;
+      }
+
+      .badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: #333;
+        font-size: 0.8em;
+        cursor: help;
+        transition: background 0.2s;
+      }
+
+      .badge:hover {
+        background: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="title" id="username">Karateka</div>
+      <div class="stat" id="sessions">0</div>
+      <div class="label">Sessions</div>
+      <div class="stat" id="techniques">0</div>
+      <div class="label">Techniques Practiced</div>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const u = params.get("u") || "Karateka";
+      const s = params.get("s") || "0";
+      const t = params.get("t") || "0";
+      const e = params.get("e") || "";
+
+      document.getElementById("username").textContent = u;
+      document.getElementById("sessions").textContent = s;
+      document.getElementById("techniques").textContent = t;
+
+      const badgeMap = {
+        "getting-started": "Completed first session",
+        "warming-up": "Completed 5 sessions",
+        "forming-habit": "Practiced 20 techniques",
+        "staying-consistent": "Practiced 100 techniques",
+        "dedicated-practitioner": "Completed 50 sessions",
+        "endurance-engine": "Practiced 250 techniques",
+        "organized-mind": "Created 10 playlists",
+        "curiosity-sparked": "Viewed 100 techniques",
+        "momentum-builder": "Practiced 5+ days in a row",
+      };
+
+      const earned = e.split(",").filter(Boolean);
+      const badgeContainer = document.getElementById("badges");
+
+      for (const id of earned) {
+        const label = badgeMap[id] || id;
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.textContent = id
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        badge.title = label;
+        badgeContainer.appendChild(badge);
+      }
+    </script>
+  </body>
+</html>
