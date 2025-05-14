@@ -5,6 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Karate Progress</title>
     <style>
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+      }
+
+      .modal-content {
+        background: #2c2c2c;
+        padding: 24px;
+        border-radius: 12px;
+        max-width: 80%;
+        color: #fff;
+        text-align: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-title {
+        font-size: 1.2em;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      .modal-desc {
+        margin-bottom: 16px;
+        font-size: 0.95em;
+        opacity: 0.8;
+      }
+
+      .modal-content button {
+        background: #444;
+        color: #fff;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+
+      .modal-content button:hover {
+        background: #666;
+      }
       body {
         margin: 0;
         padding: 0;
@@ -88,6 +135,15 @@
     <div class="qrcode-container">
       <div id="qrcode"></div>
     </div>
+    <div id="modal" class="modal" onclick="this.style.display='none'">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div id="modal-title" class="modal-title">Achievement</div>
+        <div id="modal-desc" class="modal-desc">Description</div>
+        <button onclick="document.getElementById('modal').style.display='none'">
+          Close
+        </button>
+      </div>
+    </div>
 
     <script>
       const params = new URLSearchParams(location.search);
@@ -122,7 +178,12 @@
         badge.textContent = id
           .replace(/-/g, " ")
           .replace(/\b\w/g, (l) => l.toUpperCase());
-        badge.title = label;
+        badge.addEventListener("click", () => {
+          document.getElementById("modal-title").textContent =
+            badge.textContent;
+          document.getElementById("modal-desc").textContent = label;
+          document.getElementById("modal").style.display = "flex";
+        });
         badgeContainer.appendChild(badge);
       }
 
