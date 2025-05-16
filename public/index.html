@@ -123,18 +123,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   </head>
   <body>
-    <div class="card">
-      <div class="title" id="username">Karateka</div>
-      <div class="stat" id="sessions">0</div>
-      <div class="label">Sessions</div>
-      <div class="stat" id="techniques">0</div>
-      <div class="label">Techniques Practiced</div>
-      <div class="badges" id="badges"></div>
-    </div>
 
-    <div class="qrcode-container">
-      <div id="qrcode"></div>
-    </div>
+    <!-- <div class="qrcode-container"> -->
+    <!--   <div id="qrcode"></div> -->
+    <!-- </div> -->
     <div id="modal" class="modal" onclick="this.style.display='none'">
       <div class="modal-content" onclick="event.stopPropagation()">
         <div id="modal-title" class="modal-title">Achievement</div>
@@ -145,54 +137,168 @@
       </div>
     </div>
 
-    <script>
-      const params = new URLSearchParams(location.search);
-      const u = params.get("u") || "Karateka";
-      const s = params.get("s") || "0";
-      const t = params.get("t") || "0";
-      const e = params.get("e") || "";
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-      document.getElementById("username").textContent = u;
-      document.getElementById("sessions").textContent = s;
-      document.getElementById("techniques").textContent = t;
-
-      const badgeMap = {
-        "getting-started": "Completed first session",
-        "warming-up": "Completed 5 sessions",
-        "forming-habit": "Practiced 20 techniques",
-        "staying-consistent": "Practiced 100 techniques",
-        "dedicated-practitioner": "Completed 50 sessions",
-        "endurance-engine": "Practiced 250 techniques",
-        "organized-mind": "Created 10 playlists",
-        "curiosity-sparked": "Viewed 100 techniques",
-        "momentum-builder": "Practiced 5+ days in a row",
+      const firebaseConfig = {
+        apiKey: "AIzaSyBWBABkSFSntOMTwCOt2FTDgAfaMJpvKaw",
+        authDomain: "karate-e403d.firebaseapp.com",
+        databaseURL: "https://karate-e403d-default-rtdb.firebaseio.com",
+        projectId: "karate-e403d",
+        storageBucket: "karate-e403d.appspot.com",
+        messagingSenderId: "956749449613",
+        appId: "1:956749449613:web:77a1a76f9ce039e53d55c4",
+        measurementId: "G-6JY0TEKY6H"
       };
 
-      const earned = e.split(",").filter(Boolean);
-      const badgeContainer = document.getElementById("badges");
 
-      for (const id of earned) {
-        const label = badgeMap[id] || id;
-        const badge = document.createElement("div");
-        badge.className = "badge";
-        badge.textContent = id
-          .replace(/-/g, " ")
-          .replace(/\b\w/g, (l) => l.toUpperCase());
-        badge.addEventListener("click", () => {
-          document.getElementById("modal-title").textContent =
-            badge.textContent;
-          document.getElementById("modal-desc").textContent = label;
-          document.getElementById("modal").style.display = "flex";
-        });
-        badgeContainer.appendChild(badge);
-      }
+const params = new URLSearchParams(location.search);
+const uid = params.get("u");
 
-      // Generate QR code
-      const qrCode = new QRCode(document.getElementById("qrcode"), {
-        text: window.location.href,
-        width: 128,
-        height: 128,
-      });
+const badgeMap = {
+  "getting-started": "Completed first session",
+  "warming-up": "Completed 5 sessions",
+  "forming-habit": "Practiced 20 techniques",
+  "staying-consistent": "Practiced 100 techniques",
+  "dedicated-practitioner": "Completed 50 sessions",
+  "endurance-engine": "Practiced 250 techniques",
+  "organized-mind": "Created 10 playlists",
+  "curiosity-sparked": "Viewed 100 techniques",
+  "momentum-builder": "Practiced 5+ days in a row",
+};
+
+const ACHIEVEMENTS = [
+  { id: "getting-started", cond: (s) => s.sessions >= 1 },
+  { id: "warming-up", cond: (s) => s.sessions >= 5 },
+  { id: "forming-habit", cond: (s) => s.techniques >= 20 },
+  { id: "staying-consistent", cond: (s) => s.techniques >= 100 },
+  { id: "dedicated-practitioner", cond: (s) => s.sessions >= 50 },
+  { id: "endurance-engine", cond: (s) => s.techniques >= 250 },
+  { id: "organized-mind", cond: (s) => s.playlists >= 10 },
+  { id: "curiosity-sparked", cond: (s) => s.views >= 100 },
+  { id: "momentum-builder", cond: (s) => s.longestStreak >= 5 },
+];
+
+const $ = (id) => document.getElementById(id);
+
+function getStreaks(practiceSessions) {
+  const days = new Set(
+    practiceSessions.map((s) => new Date(s.timestamp).toISOString().slice(0, 10))
+  );
+  const sortedDays = [...days].sort();
+
+  let maxStreak = 0;
+  let currentStreak = 0;
+  let lastDate = null;
+
+  for (const dateStr of sortedDays) {
+    const currentDate = new Date(dateStr);
+    if (lastDate) {
+      const diff = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
+      currentStreak = diff === 1 ? currentStreak + 1 : 1;
+    } else {
+      currentStreak = 1;
+    }
+    maxStreak = Math.max(maxStreak, currentStreak);
+    lastDate = currentDate;
+  }
+
+  return maxStreak;
+}
+
+async function loadUser(uid) {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    $("username").textContent = "User not found";
+    return;
+  }
+
+  const data = snap.data();
+  const stats = {
+    sessions: data.practice?.length || 0,
+    techniques: (data.practice || []).reduce(
+      (acc, s) => acc + (s.techniques?.length || 0),
+      0
+    ),
+    playlists: data.playlists?.length || 0,
+    views: data.views?.length || 0,
+    longestStreak: getStreaks(data.practice || []),
+  };
+
+  const earned = ACHIEVEMENTS.filter((a) => a.cond(stats)).map((a) => a.id);
+
+  $("username").textContent = data.username || "Karateka";
+  $("sessions").textContent = stats.sessions;
+  $("techniques").textContent = stats.techniques;
+
+  const badgeContainer = $("badges");
+  badgeContainer.innerHTML = "";
+
+  for (const id of earned) {
+    const label = badgeMap[id] || id;
+    const badge = document.createElement("div");
+    badge.className = "badge";
+    badge.textContent = id
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+
+    badge.addEventListener("click", () => {
+      $("modal-title").textContent = badge.textContent;
+      $("modal-desc").textContent = label;
+      $("modal").style.display = "flex";
+    });
+
+    badgeContainer.appendChild(badge);
+  }
+
+  new QRCode("qrcode", {
+    text: window.location.href,
+    width: 128,
+    height: 128,
+  });
+}
+
+if (uid) {
+  loadUser(uid);
+} else {
+  $("username").textContent = "Missing user ID";
+}
+
+
+
     </script>
+  <body>
+    <div class="card">
+      <div class="title" id="username">Loading...</div>
+      <div class="stat" id="sessions">-</div>
+      <div class="label">Sessions</div>
+      <div class="stat" id="techniques">-</div>
+      <div class="label">Techniques Practiced</div>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="qrcode-container">
+      <div id="qrcode"></div>
+    </div>
+
+    <div id="modal" class="modal" onclick="this.style.display='none'">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div id="modal-title" class="modal-title">Achievement</div>
+        <div id="modal-desc" class="modal-desc">Description</div>
+        <button onclick="document.getElementById('modal').style.display='none'">
+          Close
+        </button>
+      </div>
+    </div>
+  </body>
+</html>
   </body>
 </html>
